@@ -59,6 +59,10 @@
           <div id="normalized-matrix" class="mt-4"></div>
           <div id="priority-vector" class="mt-4"></div>
           <div id="consistency-ratio" class="mt-4"></div>
+          <div
+            id="consistency-message"
+            class="mt-4 text-lg font-semibold"
+          ></div>
         </div>
       </div>
     </div>
@@ -94,17 +98,20 @@
         const inputs = document.querySelectorAll("#matrix-input input");
         const matrix = Array.from({ length: size }, () => Array(size).fill(0));
 
+        // Build the matrix from input values
         inputs.forEach((input) => {
           const row = parseInt(input.dataset.row);
           const col = parseInt(input.dataset.col);
           matrix[row][col] = parseFloat(input.value) || 0;
         });
 
-        // Normalize the matrix
+        // Calculate column sums
         const columnSums = matrix.reduce(
           (sums, row) => row.map((val, i) => sums[i] + val),
           Array(size).fill(0)
         );
+
+        // Normalize the matrix
         const normalizedMatrix = matrix.map((row) =>
           row.map((val, i) => val / columnSums[i])
         );
@@ -114,33 +121,56 @@
           (row) => row.reduce((sum, val) => sum + val, 0) / size
         );
 
-        // Calculate Consistency Ratio (CR)
+        // Calculate weighted sums
         const weightedSums = matrix.map((row) =>
           row.map((val, i) => val * priorityVector[i])
         );
+
+        // Calculate λ max
         const lambdaMax =
           weightedSums
-            .map((row) => row.reduce((sum, val) => sum + val))
-            .reduce((sum, val, i) => sum + val / priorityVector[i], 0) / size;
+            .map(
+              (row, i) =>
+                row.reduce((sum, val) => sum + val) / priorityVector[i]
+            )
+            .reduce((sum, val) => sum + val, 0) / size;
+
+        // Calculate Consistency Index (CI)
         const ci = (lambdaMax - size) / (size - 1);
+
+        // Retrieve Random Index (RI) value
         const ri =
           [0, 0, 0.58, 0.9, 1.12, 1.24, 1.32, 1.41, 1.45, 1.49][size] || 1.49;
+
+        // Calculate Consistency Ratio (CR)
         const cr = ci / ri;
 
-        // Display results
+        // Display Results
         document.getElementById("results").classList.remove("hidden");
         document.getElementById("normalized-matrix").innerHTML = `
-        <h3 class="font-medium text-lg">Normalized Matrix:</h3>
-        <pre>${JSON.stringify(normalizedMatrix, null, 2)}</pre>
-      `;
+          <h3 class="font-medium text-lg">Normalized Matrix:</h3>
+          <pre>${JSON.stringify(normalizedMatrix, null, 2)}</pre>
+        `;
         document.getElementById("priority-vector").innerHTML = `
-        <h3 class="font-medium text-lg">Priority Vector:</h3>
-        <pre>${JSON.stringify(priorityVector, null, 2)}</pre>
-      `;
+          <h3 class="font-medium text-lg">Priority Vector Eigen:</h3>
+          <pre>${JSON.stringify(priorityVector, null, 2)}</pre>
+        `;
         document.getElementById("consistency-ratio").innerHTML = `
-        <h3 class="font-medium text-lg">Consistency Ratio:</h3>
-        <p>${cr.toFixed(3)}</p>
-      `;
+          <h3 class="font-medium text-lg">Consistency Results:</h3>
+          <p><strong>λ max:</strong> ${lambdaMax.toFixed(3)}</p>
+          <p><strong>CI:</strong> ${ci.toFixed(3)}</p>
+          <p><strong>CR:</strong> ${cr.toFixed(3)}</p>
+        `;
+
+        // Consistency message
+        const messageElement = document.getElementById("consistency-message");
+        if (cr < 0.1) {
+          messageElement.innerHTML =
+            '<p class="text-green-500">Matrix ini consistent (CR < 0.1).</p>';
+        } else {
+          messageElement.innerHTML =
+            '<p class="text-red-500">Matrix ini tidak consistent (CR ≥ 0.1). Please revise the inputs.</p>';
+        }
       }
 
       // Generate default matrix on load
