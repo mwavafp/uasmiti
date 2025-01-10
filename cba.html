@@ -277,42 +277,28 @@
 
       function calculateCBA(productCount) {
         let cbaHTML = `
-        <table class="table-auto w-full border border-gray-300 text-sm text-gray-600">
-          <thead>
-            <tr class="bg-gray-100">
-              <th class="border px-4 py-2">Produk</th>
-              <th class="border px-4 py-2">Total Benefit</th>
-              <th class="border px-4 py-2">Harga</th>
-              <th class="border px-4 py-2">CBA (Benefit / Cost)</th>
-            </tr>
-          </thead>
-          <tbody>`;
+         <h2>Fungsi Penjumlahan Sederhana (CBA)</h2>
+    
+    <form id="calculatorForm">
+        <label for="num1">Angka pertama:</label>
+        <input type="number" id="num1" required><br><br>
+        
+        <label for="num2">Angka kedua:</label>
+        <input type="number" id="num2" required><br><br>
+        
+        <button type="button" onclick="calculateSum()">Hitung</button>
+    </form>
 
-        for (
-          let productIndex = 0;
-          productIndex < productCount;
-          productIndex++
-        ) {
-          const totalBenefit = parseFloat(
-            document.getElementById(`total-product-${productIndex}`).textContent
-          );
-          console.log(alert(totalBenefit));
-          const harga = parseFloat(
-            prompt(`Masukkan Harga untuk Produk ${productIndex + 1}:`)
-          );
+    <h3>Hasil Penjumlahan: <span id="result">0</span></h3>`;
 
-          const cba = harga > 0 ? (totalBenefit / harga).toFixed(2) : 0;
+        function calculateSum() {
+          var num1 = parseFloat(document.getElementById("num1").value);
+          var num2 = parseFloat(document.getElementById("num2").value);
+          var sum = num1 + num2;
 
-          cbaHTML += `
-          <tr>
-            <td class="border px-4 py-2">Produk ${productIndex + 1}</td>
-            <td class="border px-4 py-2">${totalBenefit}</td>
-            <td class="border px-4 py-2">${harga}</td>
-            <td class="border px-4 py-2">${cba}</td>
-          </tr>`;
+          // Menampilkan hasil penjumlahan
+          document.getElementById("result").textContent = sum;
         }
-
-        cbaHTML += `</tbody></table>`;
         document.getElementById("resultTable").innerHTML = cbaHTML;
       }
     </script>
