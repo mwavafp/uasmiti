@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cost-Benefit Analysis Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-3xl bg-white shadow-lg rounded-lg p-6">
+      <h1 class="text-2xl font-bold text-gray-800 mb-4">
+        Cost-Benefit Analysis Tool
+      </h1>
+
+      <!-- Input Form -->
+      <form id="cbaForm" class="space-y-4">
+        <!-- Costs Section -->
+        <div>
+          <label for="costs" class="block text-gray-700 font-medium"
+            >Enter Costs (comma-separated):</label
+          >
+          <input
+            type="text"
+            id="costs"
+            class="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+
+        <!-- Benefits Section -->
+        <div>
+          <label for="benefits" class="block text-gray-700 font-medium"
+            >Enter Benefits (comma-separated):</label
+          >
+          <input
+            type="text"
+            id="benefits"
+            class="w-full mt-1 p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+
+        <!-- Submit Button -->
+        <button
+          type="button"
+          onclick="calculateCBA()"
+          class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
+        >
+          Calculate
+        </button>
+      </form>
+
+      <!-- Results Section -->
+      <div id="results" class="mt-6 hidden">
+        <h2 class="text-xl font-semibold text-gray-800">Results</h2>
+        <p class="text-gray-700 mt-2">
+          Total Costs: <span id="totalCosts" class="font-bold"></span>
+        </p>
+        <p class="text-gray-700">
+          Total Benefits: <span id="totalBenefits" class="font-bold"></span>
+        </p>
+        <p class="text-gray-700">
+          Net Benefit: <span id="netBenefit" class="font-bold"></span>
+        </p>
+        <p class="text-gray-700">
+          Decision: <span id="decision" class="font-bold"></span>
+        </p>
+      </div>
+    </div>
+
+    <script>
+      function calculateCBA() {
+        // Get inputs
+        const costsInput = document.getElementById("costs").value;
+        const benefitsInput = document.getElementById("benefits").value;
+
+        // Convert inputs to arrays of numbers
+        const costs = costsInput
+          .split(",")
+          .map(Number)
+          .filter((n) => !isNaN(n));
+        const benefits = benefitsInput
+          .split(",")
+          .map(Number)
+          .filter((n) => !isNaN(n));
+
+        // Calculate totals
+        const totalCosts = costs.reduce((sum, val) => sum + val, 0);
+        const totalBenefits = benefits.reduce((sum, val) => sum + val, 0);
+        const netBenefit = totalBenefits - totalCosts;
+
+        // Determine decision
+        const decision =
+          netBenefit > 0
+            ? "Proceed with the project"
+            : "Do not proceed with the project";
+
+        // Update UI
+        document.getElementById(
+          "totalCosts"
+        ).textContent = `$${totalCosts.toFixed(2)}`;
+        document.getElementById(
+          "totalBenefits"
+        ).textContent = `$${totalBenefits.toFixed(2)}`;
+        document.getElementById(
+          "netBenefit"
+        ).textContent = `$${netBenefit.toFixed(2)}`;
+        document.getElementById("decision").textContent = decision;
+
+        // Show results
+        document.getElementById("results").classList.remove("hidden");
+      }
+    </script>
+  </body>
+</html>
