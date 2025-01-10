@@ -301,7 +301,7 @@
             prompt(`Masukkan Harga untuk Produk ${productIndex + 1}:`)
           );
 
-          const cba = harga > 0 ? (benefitValue / harga).toFixed(2) : 0;
+          const cba = harga > 0 ? (totalBenefit / harga).toFixed(2) : 0;
 
           cbaHTML += `
           <tr>
