@@ -134,6 +134,7 @@
         }
 
         let tableHTML = `
+        <h2 class='text-lg'>Tabel Harga Setiap Kriteria</h2>
         <table class="table-auto w-full border border-gray-300 text-sm text-gray-600">
           <thead>
             <tr class="bg-gray-100">
@@ -149,8 +150,10 @@
           productNames.forEach((_, productIndex) => {
             tableHTML += `
             <td class="border px-4 py-2">
-              <input type='number' class='criteria-input w-full p-1 text-center border-gray-300 rounded'
+              <span class='ml-2 text-center' >Rp. 
+              <input type='number' class='criteria-input w-auto p-1  border-gray-300 rounded'
                 data-criteria='${index}' data-product='${productIndex}' />
+                </span>
             </td>`;
           });
           tableHTML += `</tr>`;
@@ -201,12 +204,13 @@
         }
       }
 
+      let globalAverages = [];
       function generatePointTable(criteriaCount, productCount) {
         let pointTableHTML = `
-          <table class="table-auto w-full border border-gray-300 text-sm text-gray-600">
-            <thead>
-              <tr class="bg-gray-100">
-                <th class="border px-4 py-2">Kriteria</th>`;
+      <table class="table-auto w-full border border-gray-300 text-sm text-gray-600">
+        <thead>
+          <tr class="bg-gray-100">
+            <th class="border px-4 py-2">Kriteria</th>`;
         for (
           let productIndex = 0;
           productIndex < productCount;
@@ -218,7 +222,7 @@
         }
         pointTableHTML += `</tr></thead><tbody>`;
 
-        const totalPoints = new Array(productCount).fill(0); // Reset total points for each product
+        const totalPoints = new Array(productCount).fill(0);
 
         for (
           let criteriaIndex = 0;
@@ -226,7 +230,7 @@
           criteriaIndex++
         ) {
           pointTableHTML += `<tr>
-            <td class="border px-4 py-2">Kriteria ${criteriaIndex + 1}</td>`;
+        <td class="border px-4 py-2">Kriteria ${criteriaIndex + 1}</td>`;
           let values = [];
           for (
             let productIndex = 0;
@@ -241,24 +245,28 @@
             values.push(value);
           }
 
-          const sortedValues = [...values].sort((a, b) => b - a); // Sort values
+          const sortedValues = [...values].sort((a, b) => b - a);
           const points = values.map((v) => {
             const rank = sortedValues.indexOf(v);
-            return 9 - rank; // Assign descending points
+            return 9 - rank;
           });
 
           points.forEach((point, productIndex) => {
-            totalPoints[productIndex] += point; // Accumulate points for each product
+            totalPoints[productIndex] += point;
             pointTableHTML += `<td class="border px-4 py-2">${point}</td>`;
           });
           pointTableHTML += `</tr>`;
         }
 
-        // Add Total Rata-rata row
+        // Hitung rata-rata
+        globalAverages = totalPoints.map((total) =>
+          (total / criteriaCount).toFixed(2)
+        );
+
+        // Tambahkan ke tabel
         pointTableHTML += `<tr class="bg-gray-200">
-            <td class="border px-4 py-2 font-semibold">Total Rata-rata</td>`;
-        totalPoints.forEach((total, productIndex) => {
-          const average = (total / criteriaCount).toFixed(2);
+        <td class="border px-4 py-2 font-semibold">Total Rata-rata</td>`;
+        globalAverages.forEach((average) => {
           pointTableHTML += `<td class="border px-4 py-2">${average}</td>`;
         });
 
@@ -267,38 +275,50 @@
         document.getElementById("weightedTable").innerHTML = pointTableHTML;
 
         document.getElementById("weightedTable").innerHTML += `
-          <div class="mt-4 flex justify-center">
-            <button onclick="calculateCBA(${productCount})"
-              class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-md">
-              Hitung CBA
-            </button>
-          </div>`;
+      <div class="mt-4 flex justify-center">
+        <button onclick="calculateCBA(${productCount})"
+          class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-md">
+          Hitung CBA
+        </button>
+      </div>`;
       }
 
       function calculateCBA(productCount) {
         let cbaHTML = `
-         <h2>Fungsi Penjumlahan Sederhana (CBA)</h2>
-    
-    <form id="calculatorForm">
-        <label for="num1">Angka pertama:</label>
-        <input type="number" id="num1" required><br><br>
-        
-        <label for="num2">Angka kedua:</label>
-        <input type="number" id="num2" required><br><br>
-        
-        <button type="button" onclick="calculateSum()">Hitung</button>
-    </form>
+    <table class="table-auto w-full border border-gray-300 text-sm text-gray-600">
+      <thead>
+        <tr class="bg-gray-100">
+          <th class="border px-4 py-2">Produk</th>
+          <th class="border px-4 py-2">Total Benefit</th>
+          <th class="border px-4 py-2">Harga</th>
+          <th class="border px-4 py-2">CBA (Benefit / Cost)</th>
+        </tr>
+      </thead>
+      <tbody>`;
 
-    <h3>Hasil Penjumlahan: <span id="result">0</span></h3>`;
+        for (
+          let productIndex = 0;
+          productIndex < productCount;
+          productIndex++
+        ) {
+          const totalBenefit = parseFloat(globalAverages[productIndex]);
+          const harga = parseInt(
+            prompt(`Masukkan Harga untuk Produk ${productIndex + 1}:`)
+          );
+          console.log(typeof totalBenefit);
+          console.log(typeof harga);
+          const cba = harga > 0 ? totalBenefit / harga : 0;
 
-        function calculateSum() {
-          var num1 = parseFloat(document.getElementById("num1").value);
-          var num2 = parseFloat(document.getElementById("num2").value);
-          var sum = num1 + num2;
-
-          // Menampilkan hasil penjumlahan
-          document.getElementById("result").textContent = sum;
+          cbaHTML += `
+      <tr>
+        <td class="border px-4 py-2">Produk ${productIndex + 1}</td>
+        <td class="border px-4 py-2">${totalBenefit}</td>
+        <td class="border px-4 py-2">${harga}</td>
+        <td class="border px-4 py-2">${cba}</td>
+      </tr>`;
         }
+
+        cbaHTML += `</tbody></table>`;
         document.getElementById("resultTable").innerHTML = cbaHTML;
       }
     </script>
