@@ -12,11 +12,11 @@
         Multi-Factor Scoring Method (MFSM)
       </h1>
       <div class="mb-8">
-        <a href="./index.html"
-          ><span class="bg-blue-500 text-white px-4 py-2 rounded-lg"
+        <a href="./index.html">
+          <span class="bg-blue-500 text-white px-4 py-2 rounded-lg"
             >Kembali</span
-          ></a
-        >
+          >
+        </a>
       </div>
       <form id="inputForm" class="space-y-5">
         <!-- Kriteria Section -->
@@ -68,12 +68,15 @@
         const div = document.createElement("div");
         div.className = "flex space-x-2";
         div.innerHTML = `
-                <input type="text" placeholder="Nama Kriteria ${criteriaCount}" 
-                    class="w-1/2 p-2 border border-gray-300 rounded focus:outline-blue-500" required>
-                <input type="number" placeholder="Bobot (%)" 
-                    class="w-1/2 p-2 border border-gray-300 rounded focus:outline-blue-500" required>
-            `;
+          <input type="text" placeholder="Nama Kriteria ${criteriaCount}" 
+              class="w-1/2 p-2 border border-gray-300 rounded focus:outline-blue-500 criteria-name" required>
+          <input type="number" placeholder="Bobot (%)" 
+              class="w-1/2 p-2 border border-gray-300 rounded focus:outline-blue-500 criteria-weight" required>
+        `;
         document.getElementById("criteriaInputs").appendChild(div);
+
+        // Perbarui input nilai kriteria di setiap alternatif
+        updateScoreInputs();
       }
 
       function addAlternative() {
@@ -81,14 +84,14 @@
         const div = document.createElement("div");
         div.className = "p-4 bg-gray-100 rounded space-y-2";
         div.innerHTML = `
-                <input type="text" placeholder="Nama Alternatif ${alternativeCount}" 
-                    class="w-full p-2 border border-gray-300 rounded focus:outline-green-500" required>
-                <div id="scores-${alternativeCount}">
-                    <label class="block text-sm font-semibold text-gray-600">
-                        Nilai terhadap tiap kriteria:
-                    </label>
-                </div>
-            `;
+          <input type="text" placeholder="Nama Alternatif ${alternativeCount}" 
+              class="w-full p-2 border border-gray-300 rounded focus:outline-green-500 alternative-name" required>
+          <div id="scores-${alternativeCount}">
+            <label class="block text-sm font-semibold text-gray-600">
+              Nilai terhadap tiap kriteria:
+            </label>
+          </div>
+        `;
         document.getElementById("alternativesInputs").appendChild(div);
         updateScoreInputs();
       }
@@ -97,18 +100,24 @@
         document
           .querySelectorAll('[id^="scores-"]')
           .forEach((scoreDiv, index) => {
-            scoreDiv.innerHTML += `
-                    ${[...Array(criteriaCount).keys()]
-                      .map(
-                        (i) => `
-                        <input type="number" placeholder="Nilai Kriteria ${
-                          i + 1
-                        }" 
-                            class="w-full mt-2 p-2 border border-gray-300 rounded focus:outline-yellow-500" required>
-                    `
-                      )
-                      .join("")}
-                `;
+            // Bersihkan input sebelumnya untuk menghindari penggandaan
+            scoreDiv.innerHTML = `
+            <label class="block text-sm font-semibold text-gray-600">
+              Nilai terhadap tiap kriteria:
+            </label>
+          `;
+
+            // Tambahkan input nilai kriteria baru
+            for (let i = 0; i < criteriaCount; i++) {
+              const input = document.createElement("input");
+              input.type = "number";
+              input.placeholder = `Nilai Kriteria ${i + 1}`;
+              input.className =
+                "w-full mt-2 p-2 border border-gray-300 rounded focus:outline-yellow-500";
+              input.required = true;
+              input.classList.add(`score-${index + 1}`);
+              scoreDiv.appendChild(input);
+            }
           });
       }
 
@@ -150,35 +159,33 @@
       function displayResults(scores) {
         const resultsDiv = document.getElementById("results");
         resultsDiv.innerHTML = `
-                <h2 class="text-lg font-semibold text-gray-800">Hasil</h2>
-                <table class="w-full text-left border-collapse mt-4">
-                    <thead class="bg-gray-200">
-                        <tr>
-                            <th class="border p-2">Alternatif</th>
-                            <th class="border p-2">Skor Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${scores
-                          .map(
-                            (score) => `
-                            <tr class="hover:bg-gray-100">
-                                <td class="border p-2">${score.name}</td>
-                                <td class="border p-2">${score.totalScore.toFixed(
-                                  2
-                                )}</td>
-                            </tr>
-                        `
-                          )
-                          .join("")}
-                    </tbody>
-                </table>
-                <p class="mt-4 font-semibold text-green-600">
-                    Alternatif Terbaik: ${
-                      scores.sort((a, b) => b.totalScore - a.totalScore)[0].name
-                    }
-                </p>
-            `;
+          <h2 class="text-lg font-semibold text-gray-800">Hasil</h2>
+          <table class="w-full text-left border-collapse mt-4">
+            <thead class="bg-gray-200">
+              <tr>
+                <th class="border p-2">Alternatif</th>
+                <th class="border p-2">Skor Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${scores
+                .map(
+                  (score) => `
+                  <tr class="hover:bg-gray-100">
+                    <td class="border p-2">${score.name}</td>
+                    <td class="border p-2">${score.totalScore.toFixed(2)}</td>
+                  </tr>
+              `
+                )
+                .join("")}
+            </tbody>
+          </table>
+          <p class="mt-4 font-semibold text-green-600">
+            Alternatif Terbaik: ${
+              scores.sort((a, b) => b.totalScore - a.totalScore)[0].name
+            }
+          </p>
+        `;
       }
     </script>
   </body>
