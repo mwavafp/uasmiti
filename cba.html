@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cost Benefit Analysis</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 20px;
+      }
+      table,
+      th,
+      td {
+        border: 1px solid black;
+        text-align: center;
+        padding: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Cost Benefit Analysis</h1>
+
+    <label for="criteriaCount">Masukkan jumlah kriteria: </label>
+    <input type="number" id="criteriaCount" min="1" />
+    <br /><br />
+    <label for="productCount">Masukkan jumlah produk: </label>
+    <input type="number" id="productCount" min="1" />
+    <br /><br />
+    <button onclick="generateInputs()">Lanjutkan</button>
+
+    <div id="dynamicInputs"></div>
+    <div id="generatedTable"></div>
+    <div id="weightedTable"></div>
+
+    <script>
+      function generateInputs() {
+        const criteriaCount = parseInt(
+          document.getElementById("criteriaCount").value
+        );
+        const productCount = parseInt(
+          document.getElementById("productCount").value
+        );
+
+        if (
+          isNaN(criteriaCount) ||
+          criteriaCount <= 0 ||
+          isNaN(productCount) ||
+          productCount <= 0
+        ) {
+          alert("Masukkan jumlah kriteria dan produk yang valid!");
+          return;
+        }
+
+        let inputsHTML = "<h3>Masukkan Nama Kriteria:</h3>";
+        for (let i = 1; i <= criteriaCount; i++) {
+          inputsHTML += `<label for='criteria${i}'>Kriteria ${i}: </label>
+                       <input type='text' id='criteria${i}' required /><br><br>`;
+        }
+
+        inputsHTML += "<h3>Masukkan Nama Produk:</h3>";
+        for (let i = 1; i <= productCount; i++) {
+          inputsHTML += `<label for='product${i}'>Produk ${i}: </label>
+                       <input type='text' id='product${i}' required /><br><br>`;
+        }
+
+        inputsHTML += `<button onclick='generateTable()'>Generate Table</button>`;
+        document.getElementById("dynamicInputs").innerHTML = inputsHTML;
+      }
+
+      function generateTable() {
+        const criteriaCount = parseInt(
+          document.getElementById("criteriaCount").value
+        );
+        const productCount = parseInt(
+          document.getElementById("productCount").value
+        );
+
+        const criteriaNames = [];
+        for (let i = 1; i <= criteriaCount; i++) {
+          const criteriaName = document
+            .getElementById(`criteria${i}`)
+            .value.trim();
+          if (!criteriaName) {
+            alert(`Nama kriteria ${i} tidak boleh kosong!`);
+            return;
+          }
+          criteriaNames.push(criteriaName);
+        }
+
+        const productNames = [];
+        for (let i = 1; i <= productCount; i++) {
+          const productName = document
+            .getElementById(`product${i}`)
+            .value.trim();
+          if (!productName) {
+            alert(`Nama produk ${i} tidak boleh kosong!`);
+            return;
+          }
+          productNames.push(productName);
+        }
+
+        let tableHTML = "<table id='mainTable'><thead><tr><th>Kriteria</th>";
+        productNames.forEach((product) => {
+          tableHTML += `<th>${product}</th>`;
+        });
+        tableHTML += "</tr></thead><tbody>";
+
+        criteriaNames.forEach((criteria, index) => {
+          tableHTML += `<tr><td>${criteria}</td>`;
+          productNames.forEach((_, productIndex) => {
+            tableHTML += `<td><input type='number' class='criteria-input' data-criteria='${index}' data-product='${productIndex}' /></td>`;
+          });
+          tableHTML += "</tr>";
+        });
+
+        tableHTML += "<tr><td><b>Total Jumlah</b></td>";
+        productNames.forEach((_, productIndex) => {
+          tableHTML += `<td id='average-product-${productIndex}'></td>`;
+        });
+        tableHTML += "</tr></tbody></table>";
+        tableHTML += `<button onclick='calculateAverages(${criteriaCount}, ${productNames.length})'>Hitung Total</button>`;
+        tableHTML += `<button onclick='generateWeightedTable(${criteriaCount}, ${productNames.length})'>Pemberian Bobot Point</button>`;
+
+        document.getElementById("generatedTable").innerHTML = tableHTML;
+      }
+
+      function calculateAverages(criteriaCount, productCount) {
+        for (let p = 0; p < productCount; p++) {
+          let total = 0;
+          let count = 0;
+
+          for (let c = 0; c < criteriaCount; c++) {
+            const input = document.querySelector(
+              `[data-criteria='${c}'][data-product='${p}']`
+            );
+            const value = parseFloat(input.value);
+
+            if (!isNaN(value)) {
+              total += value;
+              count++;
+            }
+          }
+
+          const average = count > 0 ? total.toFixed(2) : "-";
+          document.getElementById(`average-product-${p}`).innerText = average;
+        }
+      }
+
+      function generateWeightedTable(criteriaCount, productCount) {
+        const productNames = [];
+        for (let p = 0; p < productCount; p++) {
+          const productName = document.querySelector(
+            `table thead tr th:nth-child(${p + 2})`
+          ).innerText;
+          productNames.push(productName);
+        }
+
+        let weightedHTML =
+          "<table id='weightedTable'><thead><tr><th>Kriteria</th>";
+        productNames.forEach((product) => {
+          weightedHTML += `<th>${product}</th>`;
+        });
+        weightedHTML += "</tr></thead><tbody>";
+
+        const productScores = new Array(productCount).fill(0);
+        const scoreCounts = new Array(productCount).fill(0);
+
+        for (let c = 0; c < criteriaCount; c++) {
+          const values = [];
+          for (let p = 0; p < productCount; p++) {
+            const input = document.querySelector(
+              `[data-criteria='${c}'][data-product='${p}']`
+            );
+            const value = parseFloat(input.value);
+
+            if (!isNaN(value)) {
+              values.push({ productIndex: p, value });
+            }
+          }
+
+          values.sort((a, b) => b.value - a.value);
+
+          let score = 9;
+          const scores = new Array(productCount).fill(0);
+
+          values.forEach((entry) => {
+            scores[entry.productIndex] = score;
+            scoreCounts[entry.productIndex]++;
+            productScores[entry.productIndex] += score;
+            score = Math.max(1, score - 1);
+          });
+
+          weightedHTML += `<tr><td>Kriteria ${c + 1}</td>`;
+          scores.forEach((score) => {
+            weightedHTML += `<td>${score}</td>`;
+          });
+          weightedHTML += "</tr>";
+        }
+
+        weightedHTML += "<tr><td><b>Total Rata-rata Benefit</b></td>";
+        productScores.forEach((totalScore, index) => {
+          const averageScore = scoreCounts[index]
+            ? (totalScore / scoreCounts[index]).toFixed(2)
+            : "-";
+          weightedHTML += `<td>${averageScore}</td>`;
+        });
+        weightedHTML += "</tr></tbody></table>";
+        weightedHTML += `<button onclick='generateCBRTable(${productCount})'>Hitung CBR</button>`;
+
+        document.getElementById("weightedTable").innerHTML = weightedHTML;
+      }
+
+      function generateCBRTable(productCount) {
+        const productNames = [];
+        for (let p = 0; p < productCount; p++) {
+          const productName = document.querySelector(
+            `table thead tr th:nth-child(${p + 2})`
+          ).innerText;
+          productNames.push(productName);
+        }
+
+        const productScores = [];
+        document
+          .querySelectorAll("#weightedTable table tbody tr:last-child td")
+          .forEach((td, index) => {
+            if (index > 0) {
+              productScores.push(parseFloat(td.innerText));
+            }
+          });
+
+        let cbrHTML = "<h3>Cost Benefit Ratio (CBR)</h3><table>";
+        cbrHTML +=
+          "<thead><tr><th>Nama Produk</th><th>Total Benefit</th><th>Harga</th><th>CBR</th></tr></thead><tbody>";
+
+        productNames.forEach((productName, index) => {
+          cbrHTML += `<tr>
+            <td>${productName}</td>
+            <td>${productScores[index]}</td>
+            <td><input type='number' class='price-input' data-product='${index}' min='1' /></td>
+            <td id='cbr-product-${index}'></td>
+          </tr>`;
+        });
+
+        cbrHTML += "</tbody></table>";
+        cbrHTML += `<button onclick='calculateCBR(${productCount})'>Hitung CBR</button>`;
+        document
+          .getElementById("weightedTable")
+          .insertAdjacentHTML("afterend", cbrHTML);
+      }
+
+      function calculateCBR(productCount) {
+        for (let p = 0; p < productCount; p++) {
+          const benefit = parseFloat(
+            document.querySelector(
+              `#weightedTable table tbody tr:last-child td:nth-child(${p + 2})`
+            ).innerText
+          );
+          const price = parseFloat(
+            document.querySelector(`.price-input[data-product='${p}']`).value
+          );
+
+          if (isNaN(price) || price <= 0) {
+            alert(`Harga untuk produk ${p + 1} tidak valid!`);
+            return;
+          }
+
+          const cbr = (benefit / price).toFixed(2);
+          document.getElementById(`cbr-product-${p}`).innerText = cbr;
+        }
+      }
+    </script>
+  </body>
+</html>
