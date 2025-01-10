@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AHP Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 text-gray-800 font-sans">
+    <div class="min-h-screen flex items-center justify-center">
+      <div class="bg-white shadow-lg rounded-lg p-6 max-w-4xl w-full">
+        <h1 class="text-2xl font-bold text-center mb-6 text-blue-600">
+          AHP Calculator
+        </h1>
+
+        <!-- Input Section -->
+        <div class="mb-6">
+          <label for="matrix-size" class="block text-lg font-medium mb-2"
+            >Enter Matrix Size (n x n):</label
+          >
+          <input
+            id="matrix-size"
+            type="number"
+            min="2"
+            max="10"
+            value="3"
+            class="border border-gray-300 rounded-lg px-4 py-2 w-full focus:ring focus:ring-blue-300"
+          />
+          <button
+            onclick="generateMatrix()"
+            class="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+          >
+            Generate Matrix
+          </button>
+        </div>
+
+        <!-- Dynamic Matrix Input -->
+        <div id="matrix-input" class="space-y-4"></div>
+
+        <!-- Calculate Button -->
+        <div class="text-center mt-6">
+          <button
+            onclick="calculateAHP()"
+            class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded"
+          >
+            Calculate
+          </button>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results" class="mt-8 hidden">
+          <h2 class="text-xl font-bold text-green-600">Results</h2>
+          <div id="normalized-matrix" class="mt-4"></div>
+          <div id="priority-vector" class="mt-4"></div>
+          <div id="consistency-ratio" class="mt-4"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function generateMatrix() {
+        const size = parseInt(document.getElementById("matrix-size").value);
+        const matrixContainer = document.getElementById("matrix-input");
+        matrixContainer.innerHTML = "";
+
+        for (let i = 0; i < size; i++) {
+          const row = document.createElement("div");
+          row.className = "flex space-x-4";
+
+          for (let j = 0; j < size; j++) {
+            const input = document.createElement("input");
+            input.type = "number";
+            input.step = "0.01";
+            input.value = i === j ? 1 : "";
+            input.className =
+              "border border-gray-300 rounded-lg px-2 py-1 w-16 text-center focus:ring focus:ring-blue-300";
+            input.dataset.row = i;
+            input.dataset.col = j;
+
+            row.appendChild(input);
+          }
+          matrixContainer.appendChild(row);
+        }
+      }
+
+      function calculateAHP() {
+        const size = parseInt(document.getElementById("matrix-size").value);
+        const inputs = document.querySelectorAll("#matrix-input input");
+        const matrix = Array.from({ length: size }, () => Array(size).fill(0));
+
+        inputs.forEach((input) => {
+          const row = parseInt(input.dataset.row);
+          const col = parseInt(input.dataset.col);
+          matrix[row][col] = parseFloat(input.value) || 0;
+        });
+
+        // Normalize the matrix
+        const columnSums = matrix.reduce(
+          (sums, row) => row.map((val, i) => sums[i] + val),
+          Array(size).fill(0)
+        );
+        const normalizedMatrix = matrix.map((row) =>
+          row.map((val, i) => val / columnSums[i])
+        );
+
+        // Calculate priority vector
+        const priorityVector = normalizedMatrix.map(
+          (row) => row.reduce((sum, val) => sum + val, 0) / size
+        );
+
+        // Calculate Consistency Ratio (CR)
+        const weightedSums = matrix.map((row) =>
+          row.map((val, i) => val * priorityVector[i])
+        );
+        const lambdaMax =
+          weightedSums
+            .map((row) => row.reduce((sum, val) => sum + val))
+            .reduce((sum, val, i) => sum + val / priorityVector[i], 0) / size;
+        const ci = (lambdaMax - size) / (size - 1);
+        const ri =
+          [0, 0, 0.58, 0.9, 1.12, 1.24, 1.32, 1.41, 1.45, 1.49][size] || 1.49;
+        const cr = ci / ri;
+
+        // Display results
+        document.getElementById("results").classList.remove("hidden");
+        document.getElementById("normalized-matrix").innerHTML = `
+        <h3 class="font-medium text-lg">Normalized Matrix:</h3>
+        <pre>${JSON.stringify(normalizedMatrix, null, 2)}</pre>
+      `;
+        document.getElementById("priority-vector").innerHTML = `
+        <h3 class="font-medium text-lg">Priority Vector:</h3>
+        <pre>${JSON.stringify(priorityVector, null, 2)}</pre>
+      `;
+        document.getElementById("consistency-ratio").innerHTML = `
+        <h3 class="font-medium text-lg">Consistency Ratio:</h3>
+        <p>${cr.toFixed(3)}</p>
+      `;
+      }
+
+      // Generate default matrix on load
+      document.addEventListener("DOMContentLoaded", generateMatrix);
+    </script>
+  </body>
+</html>
