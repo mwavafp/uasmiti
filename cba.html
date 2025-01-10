@@ -13,9 +13,9 @@
       </h1>
 
       <div class="mb-6">
-        <label for="criteriaCount" class="block text-gray-700 font-medium"
-          >Masukkan jumlah kriteria:</label
-        >
+        <label for="criteriaCount" class="block text-gray-700 font-medium">
+          Masukkan jumlah kriteria:
+        </label>
         <input
           type="number"
           id="criteriaCount"
@@ -24,9 +24,9 @@
         />
       </div>
       <div class="mb-6">
-        <label for="productCount" class="block text-gray-700 font-medium"
-          >Masukkan jumlah produk:</label
-        >
+        <label for="productCount" class="block text-gray-700 font-medium">
+          Masukkan jumlah produk:
+        </label>
         <input
           type="number"
           id="productCount"
@@ -52,6 +52,7 @@
       <div id="dynamicInputs" class="mb-6"></div>
       <div id="generatedTable" class="overflow-x-auto mb-6"></div>
       <div id="weightedTable" class="overflow-x-auto mb-6"></div>
+      <div id="resultTable" class="overflow-x-auto mb-6"></div>
     </div>
 
     <script>
@@ -75,7 +76,7 @@
 
         let inputsHTML = `<div class="mb-4"><h3 class="text-xl font-bold text-gray-700">Masukkan Nama Kriteria:</h3>`;
         for (let i = 1; i <= criteriaCount; i++) {
-          inputsHTML += `
+          inputsHTML += ` 
           <label for='criteria${i}' class="block text-gray-600 mt-2">Kriteria ${i}:</label>
           <input type='text' id='criteria${i}' required
             class="w-full mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" />
@@ -84,14 +85,14 @@
 
         inputsHTML += `</div><div><h3 class="text-xl font-bold text-gray-700">Masukkan Nama Produk:</h3>`;
         for (let i = 1; i <= productCount; i++) {
-          inputsHTML += `
+          inputsHTML += ` 
           <label for='product${i}' class="block text-gray-600 mt-2">Produk ${i}:</label>
           <input type='text' id='product${i}' required
             class="w-full mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400" />
         `;
         }
 
-        inputsHTML += `
+        inputsHTML += `  
         <div class="mt-4">
           <button onclick='generateTable()' class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md">
             Generate Table
@@ -155,27 +156,165 @@
           tableHTML += `</tr>`;
         });
 
-        tableHTML += `<tr class="bg-gray-100"><td class="border px-4 py-2"><b>Total Jumlah</b></td>`;
-        productNames.forEach((_, productIndex) => {
-          tableHTML += `<td class="border px-4 py-2" id='average-product-${productIndex}'></td>`;
-        });
+        tableHTML += `<tr class="bg-gray-100">
+          <td class="border px-4 py-2"><b>Total Jumlah</b></td>`;
+        for (let i = 0; i < productCount; i++) {
+          tableHTML += `<td class="border px-4 py-2" id="total-product-${i}"></td>`;
+        }
         tableHTML += `</tr></tbody></table>`;
 
-        tableHTML += `
+        tableHTML += `  
         <div class="mt-4 flex space-x-4">
-          <button onclick='calculateAverages(${criteriaCount}, ${productNames.length})'
+          <button onclick='calculateTotal(${criteriaCount}, ${productCount})'
             class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md">
             Hitung Total
           </button>
-          <button onclick='generateWeightedTable(${criteriaCount}, ${productNames.length})'
+          <button onclick='generatePointTable(${criteriaCount}, ${productCount})'
             class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-md">
-            Pemberian Bobot Point
+            Generate Point Table
           </button>
         </div>`;
         document.getElementById("generatedTable").innerHTML = tableHTML;
       }
 
-      // Rest of the JavaScript (calculateAverages, generateWeightedTable, calculateCBR) remains the same...
+      function calculateTotal(criteriaCount, productCount) {
+        for (
+          let productIndex = 0;
+          productIndex < productCount;
+          productIndex++
+        ) {
+          let total = 0;
+          for (
+            let criteriaIndex = 0;
+            criteriaIndex < criteriaCount;
+            criteriaIndex++
+          ) {
+            const value = parseFloat(
+              document.querySelector(
+                `.criteria-input[data-criteria='${criteriaIndex}'][data-product='${productIndex}']`
+              ).value || 0
+            );
+            total += value;
+          }
+          document.getElementById(`total-product-${productIndex}`).textContent =
+            total;
+        }
+      }
+
+      function generatePointTable(criteriaCount, productCount) {
+        let pointTableHTML = `
+          <table class="table-auto w-full border border-gray-300 text-sm text-gray-600">
+            <thead>
+              <tr class="bg-gray-100">
+                <th class="border px-4 py-2">Kriteria</th>`;
+        for (
+          let productIndex = 0;
+          productIndex < productCount;
+          productIndex++
+        ) {
+          pointTableHTML += `<th class="border px-4 py-2">Produk ${
+            productIndex + 1
+          }</th>`;
+        }
+        pointTableHTML += `</tr></thead><tbody>`;
+
+        const totalPoints = new Array(productCount).fill(0); // Reset total points for each product
+
+        for (
+          let criteriaIndex = 0;
+          criteriaIndex < criteriaCount;
+          criteriaIndex++
+        ) {
+          pointTableHTML += `<tr>
+            <td class="border px-4 py-2">Kriteria ${criteriaIndex + 1}</td>`;
+          let values = [];
+          for (
+            let productIndex = 0;
+            productIndex < productCount;
+            productIndex++
+          ) {
+            const value = parseFloat(
+              document.querySelector(
+                `.criteria-input[data-criteria='${criteriaIndex}'][data-product='${productIndex}']`
+              ).value || 0
+            );
+            values.push(value);
+          }
+
+          const sortedValues = [...values].sort((a, b) => b - a); // Sort values
+          const points = values.map((v) => {
+            const rank = sortedValues.indexOf(v);
+            return 9 - rank; // Assign descending points
+          });
+
+          points.forEach((point, productIndex) => {
+            totalPoints[productIndex] += point; // Accumulate points for each product
+            pointTableHTML += `<td class="border px-4 py-2">${point}</td>`;
+          });
+          pointTableHTML += `</tr>`;
+        }
+
+        // Add Total Rata-rata row
+        pointTableHTML += `<tr class="bg-gray-200">
+            <td class="border px-4 py-2 font-semibold">Total Rata-rata</td>`;
+        totalPoints.forEach((total, productIndex) => {
+          const average = (total / criteriaCount).toFixed(2);
+          pointTableHTML += `<td class="border px-4 py-2">${average}</td>`;
+        });
+
+        pointTableHTML += `</tr></tbody></table>`;
+
+        document.getElementById("weightedTable").innerHTML = pointTableHTML;
+
+        document.getElementById("weightedTable").innerHTML += `
+          <div class="mt-4 flex justify-center">
+            <button onclick="calculateCBA(${productCount})"
+              class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-md">
+              Hitung CBA
+            </button>
+          </div>`;
+      }
+
+      function calculateCBA(productCount) {
+        let cbaHTML = `
+        <table class="table-auto w-full border border-gray-300 text-sm text-gray-600">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="border px-4 py-2">Produk</th>
+              <th class="border px-4 py-2">Total Benefit</th>
+              <th class="border px-4 py-2">Harga</th>
+              <th class="border px-4 py-2">CBA (Benefit / Cost)</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+        for (
+          let productIndex = 0;
+          productIndex < productCount;
+          productIndex++
+        ) {
+          const totalBenefit = parseFloat(
+            document.getElementById(`total-product-${productIndex}`).textContent
+          );
+          console.log(alert(totalBenefit));
+          const harga = parseFloat(
+            prompt(`Masukkan Harga untuk Produk ${productIndex + 1}:`)
+          );
+
+          const cba = harga > 0 ? (benefitValue / harga).toFixed(2) : 0;
+
+          cbaHTML += `
+          <tr>
+            <td class="border px-4 py-2">Produk ${productIndex + 1}</td>
+            <td class="border px-4 py-2">${totalBenefit}</td>
+            <td class="border px-4 py-2">${harga}</td>
+            <td class="border px-4 py-2">${cba}</td>
+          </tr>`;
+        }
+
+        cbaHTML += `</tbody></table>`;
+        document.getElementById("resultTable").innerHTML = cbaHTML;
+      }
     </script>
   </body>
 </html>
