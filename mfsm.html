@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Multi-Factor Scoring Method</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50 text-gray-800">
+    <div class="container mx-auto p-5">
+      <h1 class="text-3xl font-bold text-center mb-5 text-blue-600">
+        Multi-Factor Scoring Method (MFSM)
+      </h1>
+      <div class="mb-8">
+        <a href="./index.html"
+          ><span class="bg-blue-500 text-white px-4 py-2 rounded-lg"
+            >Kembali</span
+          ></a
+        >
+      </div>
+      <form id="inputForm" class="space-y-5">
+        <!-- Kriteria Section -->
+        <div>
+          <h2 class="text-xl font-semibold mb-3">Kriteria dan Bobot</h2>
+          <div id="criteriaInputs" class="space-y-3"></div>
+          <button
+            type="button"
+            onclick="addCriteria()"
+            class="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
+          >
+            Tambah Kriteria
+          </button>
+        </div>
+
+        <!-- Alternatif Section -->
+        <div>
+          <h2 class="text-xl font-semibold mb-3">Alternatif</h2>
+          <div id="alternativesInputs" class="space-y-3"></div>
+          <button
+            type="button"
+            onclick="addAlternative()"
+            class="px-4 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700"
+          >
+            Tambah Alternatif
+          </button>
+        </div>
+
+        <!-- Calculate Scores -->
+        <button
+          type="button"
+          onclick="calculateScores()"
+          class="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded shadow hover:bg-indigo-700"
+        >
+          Hitung Skor
+        </button>
+      </form>
+
+      <!-- Results Section -->
+      <div id="results" class="mt-8 bg-white p-6 rounded shadow-md"></div>
+    </div>
+
+    <script>
+      let criteriaCount = 0;
+      let alternativeCount = 0;
+
+      function addCriteria() {
+        criteriaCount++;
+        const div = document.createElement("div");
+        div.className = "flex space-x-2";
+        div.innerHTML = `
+                <input type="text" placeholder="Nama Kriteria ${criteriaCount}" 
+                    class="w-1/2 p-2 border border-gray-300 rounded focus:outline-blue-500" required>
+                <input type="number" placeholder="Bobot (%)" 
+                    class="w-1/2 p-2 border border-gray-300 rounded focus:outline-blue-500" required>
+            `;
+        document.getElementById("criteriaInputs").appendChild(div);
+      }
+
+      function addAlternative() {
+        alternativeCount++;
+        const div = document.createElement("div");
+        div.className = "p-4 bg-gray-100 rounded space-y-2";
+        div.innerHTML = `
+                <input type="text" placeholder="Nama Alternatif ${alternativeCount}" 
+                    class="w-full p-2 border border-gray-300 rounded focus:outline-green-500" required>
+                <div id="scores-${alternativeCount}">
+                    <label class="block text-sm font-semibold text-gray-600">
+                        Nilai terhadap tiap kriteria:
+                    </label>
+                </div>
+            `;
+        document.getElementById("alternativesInputs").appendChild(div);
+        updateScoreInputs();
+      }
+
+      function updateScoreInputs() {
+        document
+          .querySelectorAll('[id^="scores-"]')
+          .forEach((scoreDiv, index) => {
+            scoreDiv.innerHTML += `
+                    ${[...Array(criteriaCount).keys()]
+                      .map(
+                        (i) => `
+                        <input type="number" placeholder="Nilai Kriteria ${
+                          i + 1
+                        }" 
+                            class="w-full mt-2 p-2 border border-gray-300 rounded focus:outline-yellow-500" required>
+                    `
+                      )
+                      .join("")}
+                `;
+          });
+      }
+
+      function calculateScores() {
+        const criteriaNames = [
+          ...document.querySelectorAll(".criteria-name"),
+        ].map((input) => input.value);
+        const criteriaWeights = [
+          ...document.querySelectorAll(".criteria-weight"),
+        ].map((input) => parseFloat(input.value) / 100);
+
+        // Validasi bobot
+        if (criteriaWeights.reduce((a, b) => a + b, 0) !== 1) {
+          alert("Total bobot harus 100%");
+          return;
+        }
+
+        const alternatives = [
+          ...document.querySelectorAll(".alternative-name"),
+        ].map((input) => input.value);
+        const scores = [];
+
+        for (let i = 0; i < alternatives.length; i++) {
+          const alternativeScores = [
+            ...document.querySelectorAll(`.score-${i + 1}`),
+          ].map((input) => parseFloat(input.value));
+          scores.push({
+            name: alternatives[i],
+            totalScore: alternativeScores.reduce(
+              (total, score, idx) => total + score * criteriaWeights[idx],
+              0
+            ),
+          });
+        }
+
+        displayResults(scores);
+      }
+
+      function displayResults(scores) {
+        const resultsDiv = document.getElementById("results");
+        resultsDiv.innerHTML = `
+                <h2 class="text-lg font-semibold text-gray-800">Hasil</h2>
+                <table class="w-full text-left border-collapse mt-4">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="border p-2">Alternatif</th>
+                            <th class="border p-2">Skor Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${scores
+                          .map(
+                            (score) => `
+                            <tr class="hover:bg-gray-100">
+                                <td class="border p-2">${score.name}</td>
+                                <td class="border p-2">${score.totalScore.toFixed(
+                                  2
+                                )}</td>
+                            </tr>
+                        `
+                          )
+                          .join("")}
+                    </tbody>
+                </table>
+                <p class="mt-4 font-semibold text-green-600">
+                    Alternatif Terbaik: ${
+                      scores.sort((a, b) => b.totalScore - a.totalScore)[0].name
+                    }
+                </p>
+            `;
+      }
+    </script>
+  </body>
+</html>
